@@ -41,12 +41,15 @@ endif()
 
 add_subdirectory(external/sdsl-lite)
 
+
 include_directories(${CMAKE_HOME_DIRECTORY}/include/cstlm/
                     ${CMAKE_HOME_DIRECTORY}/external/googletest/include
                     ${CMAKE_HOME_DIRECTORY}/external/mem_monitor/
                     ${CMAKE_BINARY_DIR}/external/sdsl-lite/include
                     ${CMAKE_BINARY_DIR}/external/sdsl-lite/external/libdivsufsort/include/
                     )
+
+find_package(GTest REQUIRED)
 
 add_executable(build-index.x src/build-index.cpp)
 target_link_libraries(build-index.x sdsl pthread divsufsort divsufsort64)
@@ -58,6 +61,7 @@ add_executable(query-index-knm.x src/query-index-knm.cpp)
 target_link_libraries(query-index-knm.x sdsl pthread divsufsort divsufsort64)
 
 add_executable(unit-test.x src/unit-test.cpp)
-target_link_libraries(unit-test.x gtest_main sdsl pthread divsufsort divsufsort64)
+target_link_libraries(unit-test.x gtest gtest_main sdsl pthread divsufsort divsufsort64)
 enable_testing()
 add_test(TestsPass unit-test.x)
+

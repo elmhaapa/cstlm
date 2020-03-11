@@ -1,7 +1,7 @@
 [submodule "external/sdsl-lite"]
-	path = external/sdsl-lite
-	url = https://github.com/mpetri/sdsl-lite.git
-	branch = mapped_buffer_branch
+  path = external/sdsl-lite
+  url = https://github.com/elmhaapa/sdsl-lite.git
+  branch = remove-double_rank
 [submodule "external/googletest"]
 	path = external/googletest
 	url = https://chromium.googlesource.com/external/googletest
