@@ -25,16 +25,19 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
     uint64_t& /*M*/, uint64_t ngramsize,
     bool ismkn)
 {
+    std::cout << "SENTENCE_LOGPROB_KNESER_NEY" << std::endl;
     if (ismkn) {
+        std::cout << "ISMKN true" << std::endl;
         double final_score = 0;
         LMQueryMKN<t_idx> query(&idx, ngramsize);
         for (const auto& word : word_vec) {
-            final_score += query.append_symbol(word);
-            //LOG(INFO) << "\tprob: " << idx.m_vocab.id2token(word) << " is: " << prob;
+            auto prob = query.append_symbol(word);
+            final_score += prob;
+            LOG(INFO) << "\tprob: " << idx.m_vocab.id2token(word) << " is: " << prob;
         }
-        //LOG(INFO) << "sentence_logprob_kneser_ney for: "
-        //<< idx.m_vocab.id2token(word_vec.begin(), word_vec.end())
-        //<< " returning: " << final_score;
+        LOG(INFO) << "sentence_logprob_kneser_ney for: "
+        << idx.m_vocab.id2token(word_vec.begin(), word_vec.end())
+        << " returning: " << final_score;
         return final_score;
     }
     else {

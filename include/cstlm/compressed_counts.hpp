@@ -8,6 +8,8 @@
 #include "collection.hpp"
 #include "logging.hpp"
 #include "utils.hpp"
+#include <unordered_set>
+#include <unordered_map>
 
 namespace cstlm {
 
@@ -28,6 +30,8 @@ private:
     vector_type m_counts_f1;
     vector_type m_counts_f2;
     bool m_is_mkn;
+    std::vector<uint64_t> bwt;
+    const uint64_t interval = 0;
 
 public:
     compressed_counts() = default;
@@ -43,6 +47,7 @@ public:
         m_counts_f1 = cc.m_counts_f1;
         m_counts_f2 = cc.m_counts_f2;
         m_is_mkn = cc.m_is_mkn;
+        bwt = cc.bwt;
     }
     compressed_counts(compressed_counts&& cc)
     {
@@ -56,6 +61,7 @@ public:
         m_counts_f1 = std::move(cc.m_counts_f1);
         m_counts_f2 = std::move(cc.m_counts_f2);
         m_is_mkn = cc.m_is_mkn;
+        bwt = cc.bwt;
     }
     compressed_counts& operator=(compressed_counts&& cc)
     {
@@ -70,18 +76,86 @@ public:
         m_counts_f1 = std::move(cc.m_counts_f1);
         m_counts_f2 = std::move(cc.m_counts_f2);
         m_is_mkn = cc.m_is_mkn;
+        bwt = cc.bwt;
         return *this;
     }
 
     template <class t_cst>
     compressed_counts(collection& col, t_cst& cst, uint64_t max_node_depth,
-        bool mkn_counts)
+        bool mkn_counts, std::vector<uint64_t> b)
     {
+        bwt = b;
         m_is_mkn = mkn_counts;
         if (!mkn_counts)
             initialise_kneser_ney(col, cst, max_node_depth);
         else
             initialise_modified_kneser_ney(col, cst, max_node_depth);
+    }
+    /*
+     static std::vector<typename t_cst::csa_type::wavelet_tree_type::value_type> preceding_syms(
+            cst.csa.sigma);
+     static std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type> left(cst.csa.sigma);
+     static std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type> right(
+            cst.csa.sigma);
+     auto lb = cst.lb(node);
+     auto rb = cst.rb(node);
+     num_syms = 0;
+
+     std::cout << "compute_contexts_mkn 2 interval_symbols" << std::endl;
+     sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
+     *
+     *
+     * */
+
+    template <class t_cst>
+    void my_interval_symbols(
+        const typename t_cst::csa_type& csa, 
+        uint64_t i, 
+        uint64_t j, 
+        uint64_t& num_syms, 
+        std::vector<typename t_cst::csa_type::wavelet_tree_type::value_type>& preceding_syms, 
+        std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type>& left, 
+        std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type>& right)
+    {
+      uint64_t l = j - i;
+      if (l == 1) {
+        preceding_syms[0] = bwt[i];
+        left[0] = csa.wavelet_tree.rank(i,bwt[i]);
+        right[0] = left[0] + 1;
+        num_syms = 1;
+      } else if (l == 2) {
+        if (bwt[i] == bwt[i+1]) {
+          preceding_syms[0] = bwt[i];
+          left[0] = csa.wavelet_tree.rank(i,bwt[i]);
+          right[0] = left[0] + 2;
+          num_syms = 1;         
+        } else {
+          preceding_syms[0] = bwt[i];
+          preceding_syms[1] = bwt[i+1];
+          left[0] = csa.wavelet_tree.rank(i, bwt[i]);
+          left[1] = csa.wavelet_tree.rank(i, bwt[i+1]);
+          right[0] = left[0] + 1;
+          right[1] = left[1] + 1;  
+          num_syms = 2;
+        }
+      } else {
+        std::unordered_set<typename t_cst::csa_type::wavelet_tree_type::value_type> symbols;
+        std::unordered_map<uint64_t, uint64_t> counts;
+        for (uint64_t x = i; x < j; ++x) {
+          uint64_t val = bwt[x];
+          counts[val]++;
+          if (symbols.find(val) == symbols.end()) {
+            symbols.insert(val);
+            preceding_syms[num_syms] = val;
+            num_syms++;
+          }
+        }
+        for (uint64_t x = 0; x < num_syms; ++x) {
+          left[x] = csa.wavelet_tree.rank(i, preceding_syms[x]);
+          right[x] = left[x] + counts[preceding_syms[x]];
+        }
+     }
+
     }
 
     template <class t_cst, class t_node_type>
@@ -95,8 +169,11 @@ public:
         auto lb = cst.lb(node);
         auto rb = cst.rb(node);
         num_syms = 0;
-        sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms,
-            preceding_syms, left, right);
+        if (((rb +1) - lb) < interval) {
+          my_interval_symbols<t_cst>(cst.csa, lb, rb + 1, num_syms, preceding_syms, left, right);
+        } else {
+          sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
+        }
         auto total_contexts = 0;
         auto node_depth = cst.depth(node);
         for (size_t i = 0; i < num_syms; i++) {
@@ -139,8 +216,13 @@ public:
             static std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type> right(
                 cst.csa.sigma);
             typename t_cst::csa_type::size_type num_syms = 0;
-            sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms,
-                preceding_syms, left, right);
+            // std::cout << "compute_contexts_mkn 1 interval_symbols" << std::endl;
+            //cst.csa.wavelet_tree
+            if (((rb + 1) - lb) < interval) {
+              my_interval_symbols<t_cst>(cst.csa, lb, rb + 1, num_syms, preceding_syms, left, right);
+            } else {
+              sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
+            }
             if (num_syms == 1)
                 f1prime++;
             if (num_syms == 2)
@@ -161,25 +243,80 @@ public:
         auto lb = cst.lb(node);
         auto rb = cst.rb(node);
         num_syms = 0;
-        sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms,
-            preceding_syms, left, right);
 
+        // std::cout << "compute_contexts_mkn 2 interval_symbols" << std::endl;
+        //cst.csa.wavelet_tree
+        // sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
+  /*
+        std::cout << "lb: " << lb << " rb + 1: " << rb + 1 << std::endl;
+        std::cout << "num_syms: " << num_syms << std::endl;
+        std::cout << "preceding_syms: ";
+        for (uint64_t i = 0; i < preceding_syms.size(); ++i) {
+          std::cout << preceding_syms[i] << " ";
+        }
+        std::cout << std::endl;
+        std::cout << "bwt" << std::endl;
+        for (uint64_t i = lb; i <= rb + 1; ++i) {
+          std::cout << bwt[i] << " ";
+        }
+        std::cout << std::endl;
+*/
+
+        /*
+
+        static std::vector<typename t_cst::csa_type::wavelet_tree_type::value_type> my_preceding_syms(
+            cst.csa.sigma);
+        static std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type> my_left(cst.csa.sigma);
+        static std::vector<typename t_cst::csa_type::wavelet_tree_type::size_type> my_right(
+            cst.csa.sigma);
+        uint64_t my_num_syms = 0;
+        */
+        if (((rb + 1) - lb) < interval) {
+          my_interval_symbols<t_cst>(cst.csa, lb, rb + 1, num_syms, preceding_syms, left, right);
+        } else {
+          sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
+        }
+        /*
+        std::cout << "Iterating preceding" << std::endl;
+        std::cout << "num_syms " << num_syms << " " << my_num_syms << std::endl;
+        for (uint64_t i = 0; i < num_syms; ++i) {
+          std::cout << "prec " << preceding_syms[i] << " " << my_preceding_syms[i] << std::endl;
+          std::cout << "left " <<  left[i] << " " << my_left[i] << std::endl;
+          std::cout << "right " << right[i] << " " << my_right[i] << std::endl;
+        }
+        */
+        /*
+        std::cout << "ennen for looppia: " << num_syms << std::endl;
+        std::cout << "cst.csa.C: " << cst.csa.C.size() << std::endl;
+        std::cout << "preceding_syms: " << preceding_syms.size() << std::endl;
+        std::cout << "onko tää " << preceding_syms[0] << std::endl;
+        std::cout << "vai tää " << left[0] << std::endl;
+        std::cout << "tai ehkä tää " << cst.csa.char2comp[preceding_syms[0]] << std::endl;
+        std::cout << "oisko tää " << cst.csa.C[cst.csa.char2comp[preceding_syms[0]]] << std::endl;
+        std::cout << "right " << right[0] << std::endl; 
+        */
         for (size_t i = 0; i < num_syms; i++) {
+            // std::cout << "i " << i << std::endl;
             auto new_lb = cst.csa.C[cst.csa.char2comp[preceding_syms[i]]] + left[i];
             auto new_rb = cst.csa.C[cst.csa.char2comp[preceding_syms[i]]] + right[i] - 1;
             if (new_lb == new_rb) {
                 total_contexts++;
             }
             else {
+                // std::cout << "in else" << std::endl;
                 auto new_node = cst.node(new_lb, new_rb);
+
+                // std::cout << "new node created" << std::endl;
                 if (cst.is_leaf(new_node) || cst.depth(new_node) != node_depth + 1) {
                     total_contexts++;
-                }
-                else {
+                   // std::cout << "inside if passed" << std::endl;
+                } else {
                     auto deg = cst.degree(new_node);
                     total_contexts += deg;
+                   // std::cout << "inside else passed" << std::endl;
                 }
             }
+
         }
         return total_contexts;
     }
@@ -188,6 +325,7 @@ public:
     void initialise_kneser_ney(collection& col, t_cst& cst,
         uint64_t max_node_depth)
     {
+        std::cout << "INIT KNESER NEY!" << std::endl;
         sdsl::bit_vector tmp_bv(cst.nodes());
         sdsl::util::set_to_value(tmp_bv, 0);
         auto tmp_buffer_counts_fb = sdsl::int_vector_buffer<32>(col.temp_file("counts_fb"), std::ios::out);
@@ -241,6 +379,7 @@ public:
     void initialise_modified_kneser_ney(collection& col, t_cst& cst,
         uint64_t max_node_depth)
     {
+        std::cout << "INIT MODIFIED knn!" << std::endl;
         sdsl::bit_vector tmp_bv(cst.nodes());
         sdsl::util::set_to_value(tmp_bv, 0);
         auto tmp_buffer_counts_f1 = sdsl::int_vector_buffer<32>(col.temp_file("counts_f1"), std::ios::out);

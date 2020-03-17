@@ -235,6 +235,7 @@ private:
 template <class t_cst>
 void precomputed_stats::ncomputer(collection& col, const t_cst& cst)
 {
+    std::cout << "PREcOMPUTED_STATS::NCOMPUTER" << std::endl;
     // load up text and store in a bitvector for locating sentinel
     // symbols
     sdsl::bit_vector sentinel_bv;

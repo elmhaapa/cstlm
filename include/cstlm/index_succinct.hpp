@@ -35,13 +35,13 @@ private: // data
     cst_type m_cst;
     precomputed_stats m_discounts;
     ccounts_type m_precomputed;
-    vocab_type m_vocab;
 
 public:
     const vocab_type& vocab = m_vocab;
     const cst_type& cst = m_cst;
     const precomputed_stats& discounts = m_discounts;
     const ccounts_type& precomputed = m_precomputed;
+    vocab_type m_vocab;
 
 public:
     index_succinct() = default;
@@ -97,8 +97,12 @@ public:
             + std::to_string(byte_alphabet) + "-"
             + sdsl::util::class_to_hash(m_precomputed) + ".sdsl";
         if (!utils::file_exists(precomputed_file)) {
+            std::vector<uint64_t> bwt(m_cst.csa.bwt.size(), 0);
+            for (uint64_t i = 0; i < m_cst.csa.bwt.size(); ++i) {
+              bwt[i] = m_cst.csa.bwt[i];
+            }
             lm_construct_timer timer("PRECOMPUTED_COUNTS");
-            m_precomputed = ccounts_type(col, m_cst, t_max_ngram_count, is_mkn);
+            m_precomputed = ccounts_type(col, m_cst, t_max_ngram_count, is_mkn, bwt);
             sdsl::store_to_file(m_precomputed, precomputed_file);
         }
         else {
