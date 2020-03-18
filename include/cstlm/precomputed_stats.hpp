@@ -7,6 +7,8 @@
 #include "sdsl/int_vector_mapper.hpp"
 #include "sdsl/int_vector_mapped_buffer.hpp"
 
+#include <unordered_set>
+
 namespace cstlm {
 
 struct precomputed_stats {
@@ -40,7 +42,7 @@ struct precomputed_stats {
     precomputed_stats() = default;
 
     template <class t_cst>
-    precomputed_stats(collection& col, t_cst& cst, uint64_t max_ngram_len)
+    precomputed_stats(collection& col, t_cst& cst, uint64_t max_ngram_len, uint32_t* bwt)
         : max_ngram_count(max_ngram_len)
         , N1plus_dotdot(0)
         , N3plus_dot(0)
@@ -67,7 +69,7 @@ struct precomputed_stats {
         D3_cnt.resize(size);
 
         // compute the counts & continuation counts from the CST
-        ncomputer(col, cst);
+        ncomputer(col, cst, bwt);
 
         for (auto size = 1ULL; size <= max_ngram_len; size++) {
             Y[size] = n1[size] / (n1[size] + 2 * n2[size]);
@@ -211,7 +213,7 @@ struct precomputed_stats {
 
 private:
     template <typename t_cst>
-    void ncomputer(collection& col, const t_cst& cst);
+    void ncomputer(collection& col, const t_cst& cst, uint32_t* bwt);
 
     template <class t_cst>
     typename t_cst::size_type
@@ -231,11 +233,38 @@ private:
     }
 };
 
+template <class t_cst>
+void my_interval_symbols(
+    uint64_t i,
+    uint64_t j,
+    uint64_t& num_syms,
+    uint32_t* bwt)
+{
+  uint64_t l = j - i;
+  if (l == 1) {
+    num_syms = 1;
+  } else if (l == 2) {
+    if (bwt[i] == bwt[i+1]) {
+      num_syms = 1;
+    } else {
+      num_syms = 2;
+    }
+  } else {
+    std::unordered_set<uint32_t> symbols;
+    for (uint64_t x = i; x < j; ++x) {
+      uint64_t val = bwt[x];
+      if (symbols.find(val) == symbols.end()) {
+        symbols.insert(val);
+        num_syms++;
+      }
+    }
+ }
+} 
+
 // optimised version
 template <class t_cst>
-void precomputed_stats::ncomputer(collection& col, const t_cst& cst)
+void precomputed_stats::ncomputer(collection& col, const t_cst& cst, uint32_t* bwt)
 {
-    std::cout << "PREcOMPUTED_STATS::NCOMPUTER" << std::endl;
     // load up text and store in a bitvector for locating sentinel
     // symbols
     sdsl::bit_vector sentinel_bv;
@@ -331,8 +360,8 @@ void precomputed_stats::ncomputer(collection& col, const t_cst& cst)
                         auto lb = cst.lb(node);
                         auto rb = cst.rb(node);
                         num_syms = 0;
-                        sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms,
-                            preceding_syms, left, right);
+                        // sdsl::interval_symbols(cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
+                        my_interval_symbols<t_cst>(lb, rb+1, num_syms, bwt);
                         n1plus_back = num_syms;
                     }
 

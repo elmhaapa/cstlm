@@ -81,12 +81,16 @@ public:
         else {
             sdsl::load_from_file(m_cst, cst_file);
         }
+        uint32_t* bwt = new uint32_t[m_cst.csa.bwt.size()];
+        for (uint32_t i = 0; i < m_cst.csa.bwt.size(); ++i) {
+          bwt[i] = m_cst.csa.bwt[i];
+        }
         auto discounts_file = col.path + "/tmp/DISCOUNTS-MAXN=" + std::to_string(t_max_ngram_count) + "-BYTE="
             + std::to_string(byte_alphabet) + "-"
             + sdsl::util::class_to_hash(m_discounts) + ".sdsl";
         if (!utils::file_exists(discounts_file)) {
             lm_construct_timer timer("DISCOUNTS");
-            m_discounts = precomputed_stats(col, m_cst, t_max_ngram_count);
+            m_discounts = precomputed_stats(col, m_cst, t_max_ngram_count, bwt);
             sdsl::store_to_file(m_discounts, discounts_file);
         }
         else {
@@ -97,10 +101,7 @@ public:
             + std::to_string(byte_alphabet) + "-"
             + sdsl::util::class_to_hash(m_precomputed) + ".sdsl";
         if (!utils::file_exists(precomputed_file)) {
-            std::vector<uint64_t> bwt(m_cst.csa.bwt.size(), 0);
-            for (uint64_t i = 0; i < m_cst.csa.bwt.size(); ++i) {
-              bwt[i] = m_cst.csa.bwt[i];
-            }
+
             lm_construct_timer timer("PRECOMPUTED_COUNTS");
             m_precomputed = ccounts_type(col, m_cst, t_max_ngram_count, is_mkn, bwt);
             sdsl::store_to_file(m_precomputed, precomputed_file);
