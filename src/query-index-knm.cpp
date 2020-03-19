@@ -106,7 +106,6 @@ void run_queries(const t_idx& idx,
         pattern.push_back(PAT_END_SYM);
         pattern.insert(pattern.begin(), PAT_START_SYM);
         // run the query
-        std::cout << "RUNNING QUERY!" << std::endl;
         auto start = clock::now();
         double sentenceprob = sentence_logprob_kneser_ney(idx, pattern, M, ngramsize, ismkn);
         auto stop = clock::now();
@@ -135,7 +134,6 @@ void run_reranker(const t_idx& idx,
     const std::vector<std::vector<std::string> > orig_patterns,
     uint64_t ngramsize, bool ismkn)
 {
-    std::cout << "RUNNING RERANKER!" << std::endl;
     using clock = std::chrono::high_resolution_clock;
     double perplexity = 0;
     double min = 1000000;
