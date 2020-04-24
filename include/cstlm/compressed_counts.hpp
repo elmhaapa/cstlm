@@ -20,7 +20,6 @@ struct compressed_counts {
 
 private:
     bv_type m_bv;
-    rank_type m_bv_rank;
     vector_type m_counts_fb;
     vector_type m_counts_f1prime;
     vector_type m_counts_f2prime;
@@ -30,6 +29,7 @@ private:
     bool m_is_mkn;
 
 public:
+    rank_type m_bv_rank;
     compressed_counts() = default;
     compressed_counts(const compressed_counts& cc)
     {
