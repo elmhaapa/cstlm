@@ -143,11 +143,8 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
 
 
         LMQueryMKN<t_idx, t_pattern> query(&idx, size, ngramsize);
-        for (const auto& word : word_vec) {
-            auto the_score = query.append_symbol(word_vec, word, start_idx, end_idx, node_incl_buf, node_excl_buf, sizes, oks, breaks, cont, idxs);
-            final_score += the_score;
-            //LOG(INFO) << "\tprob: " << idx.m_vocab.id2token(word) << " is: " << prob;
-        }
+
+        query.append_symbol(word_vec, start_idx, end_idx, node_incl_buf, node_excl_buf, sizes, oks, breaks, cont, idxs);
 
         uint64_t reverse[size];
         for (auto i = 0; i < size; ++i) {
@@ -222,12 +219,14 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         // << idx.m_vocab.id2token(word_vec.begin(), word_vec.end())
         // << " returning: " << final_score;
         // std::cout << "final score: " << final_score << std::endl;
+        /*
         if (finalScore != final_score) {
           std::cout << "NO MATCH!" << std::endl;
           std::cout << "MY RESULT: " << finalScore << std::endl;
           std::cout << "final score: " << final_score << std::endl;
         }
-        return final_score;
+        */
+        return finalScore;
     }
     else {
         double final_score = 0;

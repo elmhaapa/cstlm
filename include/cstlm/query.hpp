@@ -41,9 +41,8 @@ public:
         m_idx = nullptr;
     }
     LMQueryMKN(const index_type* idx, uint64_t ngramsize, bool start_sentence = true);
-    double append_symbol(
+    void append_symbol(
         const t_pattern& word_vec,
-        const value_type& symbol,
         uint64_t* start_idx,
         uint64_t* end_idx,
         node_type* node_incl_buf,
@@ -246,9 +245,8 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
 }
 
 template <class t_idx, class t_pattern>
-double LMQueryMKN<t_idx, t_pattern>::append_symbol(
+void LMQueryMKN<t_idx, t_pattern>::append_symbol(
     const t_pattern& word_vec,
-    const value_type& symbol,
     uint64_t* start_idx,
     uint64_t* end_idx,
     node_type* node_incl_buf,
@@ -260,12 +258,12 @@ double LMQueryMKN<t_idx, t_pattern>::append_symbol(
     uint8_t* idxs
     )
 {
-
+  for (auto symbol : word_vec) {
     if (symbol == PAT_START_SYM && m_pattern.size() == 1 && m_pattern.front() == PAT_START_SYM) {
         cont[node_step] = true;
         step++;
         node_step++;
-        return log10(1);
+        continue;
     }
 
     m_pattern_end++;
@@ -277,7 +275,7 @@ double LMQueryMKN<t_idx, t_pattern>::append_symbol(
     std::vector<value_type> pattern(m_pattern.begin(), m_pattern.end());
 
     // fast way, tracking state
-    double p = 1.0 / (m_idx->vocab.size() - 4);
+    // double p = 1.0 / (m_idx->vocab.size() - 4);
     node_type node_incl = m_idx->cst.root(); // v_F^all matching the full pattern, including last item
     auto node_excl_it = m_last_nodes_incl.begin(); // v_F     matching only the context, excluding last item
     node_type node_excl = *node_excl_it;
@@ -328,6 +326,7 @@ double LMQueryMKN<t_idx, t_pattern>::append_symbol(
         // std::cout << "pattern_end: " << *(pattern_end -1) << " end_idx[node_step]: " << word_vec[m_pattern_end - 1] << std::endl;
         oks[node_step] = ok;
 
+        /*
         double D1, D2, D3p;
         m_idx->mkn_discount(i, D1, D2, D3p, i == 1 || i != m_ngramsize);
 
@@ -379,6 +378,8 @@ double LMQueryMKN<t_idx, t_pattern>::append_symbol(
         // std::cout << "c: " << c << " gammas: " << gamma << " d: " << d << std::endl;
         //LOG(INFO) << "\t\ti = " << i << " p = " << p << " c = " << c << " gamma " << gamma << " d = " << d;
         //LOG(INFO) << "\t\t\t" << D1 << ":" << n1 << ":" << D2 << ":" << n2 << ":" << D3p << ":" << n3p;
+    */
+
     }
 
     m_last_nodes_incl = node_incl_vec;
@@ -389,7 +390,7 @@ double LMQueryMKN<t_idx, t_pattern>::append_symbol(
 
     step++;
     node_step++;
-    return log10(p);
+  }
 }
 
 template <class t_idx, class t_pattern>
