@@ -140,67 +140,57 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
 
     if (ismkn) {
         double final_score = 0;
-        uint32_t size = word_vec.size() * ngramsize;
+        uint64_t size = std::pow(word_vec.size(), 2);
         node_type node_incl_buf[size];
         node_type node_excl_buf[size];
-        uint64_t start_idx[size];
-        uint64_t end_idx[size];
-        size_t sizes[size];
-        bool oks[size];
-        bool breaks[size];
-        bool cont[size];
-        uint8_t idxs[size];
+        uint64_t start_idx[size] = {0};
+        uint64_t end_idx[size] = {0};
+        size_t sizes[size] = {0};
+        bool oks[size] = {0};
+        bool breaks[size] = {0};
+        bool cont[size] = {0};
+        uint8_t idxs[size] = {0};
+
+
         LMQueryMKN<t_idx, t_pattern> query(&idx, size, ngramsize);
         for (const auto& word : word_vec) {
             auto the_score = query.append_symbol(word_vec, word, start_idx, end_idx, node_incl_buf, node_excl_buf, sizes, oks, breaks, cont, idxs);
-            std::cout << "psum: " << final_score << " adding: " << the_score << std::endl;
             final_score += the_score;
             //LOG(INFO) << "\tprob: " << idx.m_vocab.id2token(word) << " is: " << prob;
         }
 
-        for (auto i = 0; i < size; ++i) {
-          // std::cout << node_incl_buf[i] << " " << idx.cst.id(node_incl_buf[i]) << " " << *start_idx[i] << std::endl;
-        }
-      
         uint64_t reverse[size];
         for (auto i = 0; i < size; ++i) {
           reverse[i] = i;
         }
 
         node_type node_incl_buf_sorted[size];
-        std::copy(node_incl_buf, node_incl_buf + size, node_incl_buf_sorted);
+        std::copy(node_incl_buf, node_incl_buf + query.node_step, node_incl_buf_sorted);
 
         node_type node_excl_buf_sorted[size];
-        std::copy(node_excl_buf, node_excl_buf + size, node_excl_buf_sorted);
+        std::copy(node_excl_buf, node_excl_buf + query.node_step, node_excl_buf_sorted);
 
         uint64_t start_idx_sorted[size];
-        std::copy(start_idx, start_idx  + size, start_idx_sorted);
+        std::copy(start_idx, start_idx  + query.node_step, start_idx_sorted);
 
         uint64_t end_idx_sorted[size];
-        std::copy(end_idx, end_idx  + size, end_idx_sorted);
+        std::copy(end_idx, end_idx  + query.node_step, end_idx_sorted);
 
         size_t sizes_sorted[size];
-        std::copy(sizes, sizes  + size, sizes_sorted);
+        std::copy(sizes, sizes  + query.node_step, sizes_sorted);
 
         bool oks_sorted[size];
-        std::copy(oks, oks  + size, oks_sorted);
+        std::copy(oks, oks  + query.node_step, oks_sorted);
 
         bool breaks_sorted[size];
-        std::copy(breaks, breaks  + size, breaks_sorted);
+        std::copy(breaks, breaks  + query.node_step, breaks_sorted);
 
         bool cont_sorted[size];
-        std::copy(cont, cont  + size, cont_sorted);
+        std::copy(cont, cont  + query.node_step, cont_sorted);
   
         uint8_t idxs_sorted[size];
-        std::copy(idxs, idxs  + size, idxs_sorted);
+        std::copy(idxs, idxs  + query.node_step, idxs_sorted);
        
-        std::cout << "sizes: " << std::endl;
-        for (auto i = 0; i < size; ++i) {
-          std::cout << sizes_sorted[i] << " ";
-        }
-        std::cout << std::endl << "---" << std::endl;
-               
-        std::cout << "going quickstort" << std::endl;
         quicksort<t_idx>(
             idx, 
             reverse,
@@ -214,34 +204,15 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
             cont_sorted,
             idxs_sorted,
             0, 
-            size -1
+            query.node_step -1
           );
-        std::cout << "and sorted:" << std::endl;
-        
-        /*
-        for (auto i = 0; i < size; ++i) {
-          std::cout << node_incl_buf_sorted[i] << " " << idx.cst.id(node_incl_buf_sorted[i]) << std::endl;
-        }
-        */
 
         double cs[size];
         double gammas[size];
         double ds[size];
 
-        std::cout << std::endl << "---" << std::endl;
-        query.compute2(word_vec, start_idx_sorted, end_idx_sorted, node_incl_buf_sorted, node_excl_buf_sorted, sizes_sorted, oks_sorted, breaks_sorted, cont_sorted, cs, gammas, ds, size, idxs_sorted);
 
-        std::cout << "sizes_sorted: " << std::endl;
-        for (auto i = 0; i < size; ++i) {
-          std::cout << sizes_sorted[i] << " ";
-        }
-        std::cout << std::endl << "---" << std::endl;
-        /*
-        std::cout << "and back:" << std::endl;
-        for (auto i = 0; i < size; ++i) {
-          std::cout << node_incl_buf[i] << " " << idx.cst.id(node_incl_buf[i]) << std::endl;
-        }
-        */
+        query.compute(word_vec, start_idx_sorted, end_idx_sorted, node_incl_buf_sorted, node_excl_buf_sorted, sizes_sorted, oks_sorted, breaks_sorted, cont_sorted, cs, gammas, ds, size, idxs_sorted);
         double finalcs[size];
         double finalgammas[size];
         double finalds[size];
@@ -256,18 +227,17 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
           finalbreaks[reverse[i]] = breaks_sorted[i];
           finalcont[reverse[i]] = cont_sorted[i];
         }
-
-        std::cout << "finasizes: " << std::endl;
-        for (auto i = 0; i < size; ++i) {
-          std::cout << finalsizes[i] << " ";
-        }
-        std::cout << std::endl << "---" << std::endl;
-        double finalScore = query.finale(finalsizes, finalbreaks, finalcont, finalcs, finalgammas, finalds);
-         std::cout << "MY RESULT: " << finalScore << std::endl;
+         double finalScore = query.finale(finalsizes, finalbreaks, finalcont, finalcs, finalgammas, finalds);
+        // std::cout << "MY RESULT: " << finalScore << std::endl;
         // LOG(INFO) << "sentence_logprob_kneser_ney for: "
         // << idx.m_vocab.id2token(word_vec.begin(), word_vec.end())
         // << " returning: " << final_score;
-         std::cout << "final score: " << final_score << std::endl;
+        // std::cout << "final score: " << final_score << std::endl;
+        if (finalScore != final_score) {
+          std::cout << "NO MATCH!" << std::endl;
+          std::cout << "MY RESULT: " << finalScore << std::endl;
+          std::cout << "final score: " << final_score << std::endl;
+        }
         return final_score;
     }
     else {

@@ -375,6 +375,7 @@ public:
         auto id = cst.id(node);
         // LOG(INFO) << "lookup_f12(" << id << ")";
         auto rank_in_vec = m_bv_rank(id);
+        // LOG(INFO) << "lookup_f12(" << rank_in_vec << ")";
         f1 = m_counts_f1[rank_in_vec];
         f2 = m_counts_f2[rank_in_vec];
     }
@@ -384,8 +385,9 @@ public:
     {
         auto timer = lm_bench::bench(timer_type::lookup_fb);
         auto id = cst.id(node);
-        // LOG(INFO) << "lookup_fb(" << id << ")";
+       //  LOG(INFO) << "lookup_fb(" << id << ")";
         auto rank_in_vec = m_bv_rank(id);
+       // LOG(INFO) << "lookup_fb(" << rank_in_vec << ")";
         return m_counts_fb[rank_in_vec];
     }
 
@@ -398,6 +400,8 @@ public:
         auto id = cst.id(node);
         // LOG(INFO) << "lookup_f12prime(" << id << ")";
         auto rank_in_vec = m_bv_rank(id);
+
+        // LOG(INFO) << "lookup_f12prime(" << rank_in_vec << ")";
         f1prime = m_counts_f1prime[rank_in_vec];
         f2prime = m_counts_f2prime[rank_in_vec];
     }
@@ -409,6 +413,7 @@ public:
         auto id = cst.id(node);
         // LOG(INFO) << "lookup_b(" << id << ")";
         auto rank_in_vec = m_bv_rank(id);
+        // LOG(INFO) << "lookup_b(" << rank_in_vec << ")";
         return m_counts_b[rank_in_vec];
     }
 };

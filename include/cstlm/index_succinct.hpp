@@ -386,11 +386,9 @@ public:
         f1prime = f2prime = f3pprime = 0;
         uint64_t all = 0;
 
-        std::cout << "pattern_size: " << pattern_size << std::endl;
         if (full_match) {
             if (m_precomputed.is_precomputed(m_cst, node)) {
                 m_precomputed.lookup_f12prime(m_cst, node, f1prime, f2prime); // FIXME change the name n1plusfrontback
-                std::cout << "m_N123Prime lookup: " << f1prime << std::endl;
                 all = m_cst.degree(node);
             }
             else {
@@ -404,7 +402,6 @@ public:
                     typename t_cst::csa_type::size_type num_syms = 0;
                     sdsl::interval_symbols(m_cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
                     if (num_syms == 1) {
-                        std::cout << "m_N123Prime first" << std::endl;
                         f1prime++;
                     }
                     if (num_syms == 2)
@@ -420,7 +417,6 @@ public:
             // pattern is part of the edge label
             uint64_t num_symsprime = m_N1PlusBack(node, pattern_begin);
             if (num_symsprime == 1) {
-                std::cout << "m_N123Prime second" << std::endl;
                 f1prime++;
             }
             if (num_symsprime == 2)
@@ -440,12 +436,10 @@ public:
         bool full_match = (!m_cst.is_leaf(node) && pattern_size == m_cst.depth(node));
         f1prime = f2prime = f3pprime = 0;
         uint64_t all = 0;
-        std::cout << "pattern_size: " << pattern_size << std::endl;
         if (full_match) {
             if (m_precomputed.is_precomputed(m_cst, node)) {
                 m_precomputed.lookup_f12prime(m_cst, node, f1prime, f2prime); // FIXME change the name n1plusfrontback
 
-                std::cout << "N123Prime lookup: " << f1prime << std::endl;
                 all = m_cst.degree(node);
             }
             else {
@@ -459,7 +453,6 @@ public:
                     typename t_cst::csa_type::size_type num_syms = 0;
                     sdsl::interval_symbols(m_cst.csa.wavelet_tree, lb, rb + 1, num_syms, preceding_syms, left, right);
                     if (num_syms == 1) {
-                        std::cout << "N123Prime first" << std::endl;
                         f1prime++;
                     }
                     if (num_syms == 2)
@@ -476,7 +469,6 @@ public:
             uint64_t num_symsprime = N1PlusBack(node, pattern_begin, pattern_end);
             if (num_symsprime == 1) {
 
-                std::cout << "N123Prime second" << std::endl;
                 f1prime++;
             }
             if (num_symsprime == 2)
@@ -493,6 +485,7 @@ public:
         uint64_t pattern_end, uint64_t& n1, uint64_t& n2,
         uint64_t& n3p, uint64_t pattern_size) const
     {
+        // std::cout << "m_N123 pattern_size: " << pattern_size << std::endl;
         auto timer = lm_bench::bench(timer_type::N123PlusFront);
         // ASSUMPTION: node matches the pattern in the forward tree, m_cst
         // uint64_t pattern_size = std::distance(pattern_begin, pattern_end);
@@ -503,6 +496,8 @@ public:
             if (pattern_size <= t_max_ngram_count) {
                 // FIXME: this bit is currently broken
                 m_precomputed.lookup_f12(m_cst, node, n1, n2);
+
+                // std::cout << "m_N123 precomputed n1: " << n1 << std::endl;
                 n3p = m_cst.degree(node) - n1 - n2;
             }
             else {
@@ -512,8 +507,8 @@ public:
                 while (child != root) {
                     auto c = m_cst.size(child);
                     if (c == 1) {
-                        std::cout << "m_N123 first" << std::endl;
                         n1 += 1;
+                        // std::cout << "m_N123 not precomputed n1: " << n1 << std::endl;
                     }
                     else if (c == 2)
                         n2 += 1;
@@ -526,11 +521,12 @@ public:
         else {
             // pattern is part of the edge label
             uint64_t symbol = pattern_end;
+            // std::cout << "end symbol: " << symbol << std::endl;
             if (symbol != PAT_END_SYM) {
                 auto c = m_cst.size(node);
                 if (c == 1) {
-                    std::cout << "m_N123 second" << std::endl;
                     n1 += 1;
+                    // std::cout << "m_N123 not symbol end n1: " << n1 << std::endl;
                 }
                 else if (c == 2)
                     n2 += 1;
@@ -548,6 +544,8 @@ public:
         auto timer = lm_bench::bench(timer_type::N123PlusFront);
         // ASSUMPTION: node matches the pattern in the forward tree, m_cst
         uint64_t pattern_size = std::distance(pattern_begin, pattern_end);
+
+        // std::cout << "N123 pattern_size: " << pattern_size << std::endl;
         bool full_match = (!m_cst.is_leaf(node) && pattern_size == m_cst.depth(node));
         n1 = n2 = n3p = 0;
         if (full_match) {
@@ -555,6 +553,8 @@ public:
             if (pattern_size <= t_max_ngram_count) {
                 // FIXME: this bit is currently broken
                 m_precomputed.lookup_f12(m_cst, node, n1, n2);
+
+                // std::cout << "N123 precomputed n1: " << n1 << std::endl;
                 n3p = m_cst.degree(node) - n1 - n2;
             }
             else {
@@ -564,7 +564,6 @@ public:
                 while (child != root) {
                     auto c = m_cst.size(child);
                     if (c == 1) {
-                      std::cout << "N123 first" << std::endl;
                         n1 += 1;
                     }
                     else if (c == 2)
@@ -573,17 +572,19 @@ public:
                         n3p += 1;
                     child = m_cst.sibling(child);
                 }
+
+                // std::cout << "N123 not precomputed n1: " << n1 << std::endl;
             }
         }
         else {
             // pattern is part of the edge label
-            uint64_t symbol = *(pattern_end - 1);
+            uint64_t symbol = *(pattern_end -1);
+            // std::cout << "N123 end symbol: " << symbol << std::endl;
             if (symbol != PAT_END_SYM) {
                 auto c = m_cst.size(node);
                 if (c == 1) {
-
-                    std::cout << "N123 second" << std::endl;
                     n1 += 1;
+                    // std::cout << "N123 not pattern end n1: " << n1 << std::endl;
                 }
                 else if (c == 2)
                     n2 += 1;
