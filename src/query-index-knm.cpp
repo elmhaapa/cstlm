@@ -234,10 +234,12 @@ int execute(collection& col, const cmdargs_t& args)
         std::ifstream ifile(args.pattern_file);
         LOG(INFO) << "reading input file '" << args.pattern_file << "'";
         std::string line;
+
+        typename t_idx::pattern_type tokens;
         while (std::getline(ifile, line)) {
             auto line_tokens = parse_line(line, col.alphabet);
-            typename t_idx::pattern_type tokens;
             std::vector<std::string> orig_tokens;
+
             for (const auto& token : line_tokens) {
                 if (args.isreranking)
                     orig_tokens.push_back(token);
@@ -248,8 +250,9 @@ int execute(collection& col, const cmdargs_t& args)
                 orig_tokens.erase(orig_tokens.begin(), orig_tokens.begin() + 2);
                 orig_patterns.push_back(orig_tokens);
             }
-            patterns.push_back(tokens);
+
         }
+        patterns.push_back(tokens);
     }
     else {
         LOG(FATAL) << "cannot read pattern file '" << args.pattern_file << "'";

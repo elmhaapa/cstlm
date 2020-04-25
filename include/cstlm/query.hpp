@@ -43,38 +43,38 @@ public:
     LMQueryMKN(const index_type* idx, uint64_t ngramsize, bool start_sentence = true);
     void append_symbol(
         const t_pattern& word_vec,
-        uint64_t* start_idx,
-        uint64_t* end_idx,
-        node_type* node_incl_buf,
-        node_type* node_excl_buf,
-        size_t* sizes,
-        bool* oks,
-        bool* breaks,
-        bool* cont,
-        uint8_t* idxs
+        std::vector<uint64_t>& start_idx,
+        std::vector<uint64_t>& end_idx,
+        std::vector<node_type>& node_incl_buf,
+        std::vector<node_type>& node_excl_buf,
+        std::vector<size_t>& sizes,
+        std::vector<bool>& oks,
+        std::vector<bool>& breaks,
+        std::vector<bool>& cont,
+        std::vector<uint8_t>& idxs
     );
 
     void compute(
       const t_pattern& word_vec,
-      uint64_t* start_idx,
-      uint64_t* end_idx,
-      node_type* node_incl_buf,
-      node_type* node_excl_buf,
-      size_t* sizes,
-      bool* oks,
-      double* cs,
-      double* gammas,
-      double* ds,
-      uint8_t* idxs
+      std::vector<uint64_t>& start_idx,
+      std::vector<uint64_t>& end_idx,
+      std::vector<node_type>& node_incl_buf,
+      std::vector<node_type>& node_excl_buf,
+      std::vector<size_t>& sizes,
+      std::vector<bool>& oks,
+      std::vector<double>& cs,
+      std::vector<double>& gammas,
+      std::vector<double>& ds,
+      std::vector<uint8_t>& idxs
     );
 
     double finale(
-      size_t* sizes,
-      bool* breaks,
-      bool* cont,
-      double* cs,
-      double* gammas,
-      double* ds
+      std::vector<size_t>& sizes,
+      std::vector<bool>& breaks,
+      std::vector<bool>& cont,
+      std::vector<double>& cs,
+      std::vector<double>& gammas,
+      std::vector<double>& ds
     );
 
     bool operator==(const LMQueryMKN& other) const;
@@ -125,16 +125,16 @@ LMQueryMKN<t_idx, t_pattern>::LMQueryMKN(const t_idx* idx, uint64_t ngramsize, b
 template <class t_idx, class t_pattern>
 void LMQueryMKN<t_idx, t_pattern>::compute(
       const t_pattern& word_vec,
-      uint64_t* start_idx,
-      uint64_t* end_idx,
-      node_type* node_incl_buf,
-      node_type* node_excl_buf,
-      size_t* sizes,
-      bool* oks,
-      double* cs,
-      double* gammas,
-      double* ds,
-      uint8_t* idxs
+      std::vector<uint64_t>& start_idx,
+      std::vector<uint64_t>& end_idx,
+      std::vector<node_type>& node_incl_buf,
+      std::vector<node_type>& node_excl_buf,
+      std::vector<size_t>& sizes,
+      std::vector<bool>& oks,
+      std::vector<double>& cs,
+      std::vector<double>& gammas,
+      std::vector<double>& ds,
+      std::vector<uint8_t>& idxs
     ) {
 
   for (auto a = 0; a < node_step; ++a) {
@@ -211,12 +211,12 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
 
 template <class t_idx, class t_pattern>
 double LMQueryMKN<t_idx, t_pattern>::finale(
-      size_t* sizes,
-      bool* breaks,
-      bool* cont,
-      double* cs,
-      double* gammas,
-      double* ds
+      std::vector<size_t>& sizes,
+      std::vector<bool>& breaks,
+      std::vector<bool>& cont,
+      std::vector<double>& cs,
+      std::vector<double>& gammas,
+      std::vector<double>& ds
     ) {
   double psum = 0.0;
   auto counter = 0;
@@ -247,15 +247,15 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
 template <class t_idx, class t_pattern>
 void LMQueryMKN<t_idx, t_pattern>::append_symbol(
     const t_pattern& word_vec,
-    uint64_t* start_idx,
-    uint64_t* end_idx,
-    node_type* node_incl_buf,
-    node_type* node_excl_buf,
-    size_t* sizes,
-    bool* oks,
-    bool* breaks,
-    bool* cont,
-    uint8_t* idxs
+    std::vector<uint64_t>& start_idx,
+    std::vector<uint64_t>& end_idx,
+    std::vector<node_type>& node_incl_buf,
+    std::vector<node_type>& node_excl_buf,
+    std::vector<size_t>& sizes,
+    std::vector<bool>& oks,
+    std::vector<bool>& breaks,
+    std::vector<bool>& cont,
+    std::vector<uint8_t>& idxs
     )
 {
   for (auto symbol : word_vec) {
