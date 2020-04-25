@@ -30,8 +30,6 @@ uint64_t partition(
     uint64_t* end_idx,
     size_t* sizes_sorted,
     bool* oks_sorted,
-    bool* breaks_sorted,
-    bool* cont_sorted,
     uint8_t* idxs_sorted,
     uint64_t l, 
     uint64_t h
@@ -49,8 +47,6 @@ uint64_t partition(
             swap(start_idx[i], start_idx[j]);
             swap(sizes_sorted[i], sizes_sorted[j]); 
             swap(oks_sorted[i], oks_sorted[j]); 
-            swap(breaks_sorted[i], breaks_sorted[j]); 
-            swap(cont_sorted[i], cont_sorted[j]); 
             swap(idxs_sorted[i], idxs_sorted[j]); 
 
             swap(reverse[i], reverse[j]); 
@@ -63,8 +59,6 @@ uint64_t partition(
     swap(start_idx[i + 1], start_idx[h]);
     swap(sizes_sorted[i + 1], sizes_sorted[h]); 
     swap(oks_sorted[i + 1], oks_sorted[h]); 
-    swap(breaks_sorted[i + 1], breaks_sorted[h]); 
-    swap(cont_sorted[i + 1], cont_sorted[h]); 
     swap(idxs_sorted[i + 1], idxs_sorted[h]); 
 
 
@@ -82,8 +76,6 @@ void quicksort(
     uint64_t* end_idx,
     size_t* sizes_sorted,
     bool* oks_sorted,
-    bool* breaks_sorted,
-    bool* cont_sorted,
     uint8_t* idxs_sorted,
     uint64_t l, 
     uint64_t h
@@ -108,8 +100,6 @@ void quicksort(
             end_idx,
             sizes_sorted,
             oks_sorted,
-            breaks_sorted,
-            cont_sorted,
             idxs_sorted,
             l, 
             h
@@ -163,7 +153,7 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         for (auto i = 0; i < size; ++i) {
           reverse[i] = i;
         }
-
+/*
         node_type node_incl_buf_sorted[size];
         std::copy(node_incl_buf, node_incl_buf + query.node_step, node_incl_buf_sorted);
 
@@ -176,33 +166,36 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         uint64_t end_idx_sorted[size];
         std::copy(end_idx, end_idx  + query.node_step, end_idx_sorted);
 
-        size_t sizes_sorted[size];
-        std::copy(sizes, sizes  + query.node_step, sizes_sorted);
-
+        uint8_t idxs_sorted[size];
+        std::copy(idxs, idxs  + query.node_step, idxs_sorted);
+       
         bool oks_sorted[size];
         std::copy(oks, oks  + query.node_step, oks_sorted);
+*/
 
+        // We need breaks, cont, ands sizes reverted.
+        // So instead of reversing them later we just copy new ones for sorting.
+        /*
         bool breaks_sorted[size];
         std::copy(breaks, breaks  + query.node_step, breaks_sorted);
 
         bool cont_sorted[size];
         std::copy(cont, cont  + query.node_step, cont_sorted);
-  
-        uint8_t idxs_sorted[size];
-        std::copy(idxs, idxs  + query.node_step, idxs_sorted);
-       
+  */
+        size_t sizes_sorted[size];
+        std::copy(sizes, sizes  + query.node_step, sizes_sorted);
+
+
         quicksort<t_idx>(
             idx, 
             reverse,
-            node_incl_buf_sorted, 
-            node_excl_buf_sorted,
-            start_idx_sorted,
-            end_idx_sorted,
+            node_incl_buf, 
+            node_excl_buf,
+            start_idx,
+            end_idx,
             sizes_sorted,
-            oks_sorted,
-            breaks_sorted,
-            cont_sorted,
-            idxs_sorted,
+            oks,
+            idxs,
             0, 
             query.node_step -1
           );
@@ -212,22 +205,18 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         double ds[size];
 
 
-        query.compute(word_vec, start_idx_sorted, end_idx_sorted, node_incl_buf_sorted, node_excl_buf_sorted, sizes_sorted, oks_sorted, breaks_sorted, cont_sorted, cs, gammas, ds, size, idxs_sorted);
+        query.compute(word_vec, start_idx, end_idx, node_incl_buf, node_excl_buf, sizes_sorted, oks, cs, gammas, ds, idxs);
         double finalcs[size];
         double finalgammas[size];
         double finalds[size];
-        size_t finalsizes[size];
-        bool finalbreaks[size];
-        bool finalcont[size];
+        //size_t finalsizes[size];
         for (auto i = 0; i < size; ++i) {
           finalcs[reverse[i]] = cs[i];
           finalgammas[reverse[i]] = gammas[i];
           finalds[reverse[i]] = ds[i];
-          finalsizes[reverse[i]] = sizes_sorted[i];
-          finalbreaks[reverse[i]] = breaks_sorted[i];
-          finalcont[reverse[i]] = cont_sorted[i];
+          //finalsizes[reverse[i]] = sizes_sorted[i];
         }
-         double finalScore = query.finale(finalsizes, finalbreaks, finalcont, finalcs, finalgammas, finalds);
+        double finalScore = query.finale(sizes, breaks, cont, finalcs, finalgammas, finalds);
         // std::cout << "MY RESULT: " << finalScore << std::endl;
         // LOG(INFO) << "sentence_logprob_kneser_ney for: "
         // << idx.m_vocab.id2token(word_vec.begin(), word_vec.end())

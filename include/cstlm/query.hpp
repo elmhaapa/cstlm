@@ -63,12 +63,9 @@ public:
       node_type* node_excl_buf,
       size_t* sizes,
       bool* oks,
-      bool* breaks,
-      bool* cont,
       double* cs,
       double* gammas,
       double* ds,
-      uint64_t thesize,
       uint8_t* idxs
     );
 
@@ -135,12 +132,9 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       node_type* node_excl_buf,
       size_t* sizes,
       bool* oks,
-      bool* breaks,
-      bool* cont,
       double* cs,
       double* gammas,
       double* ds,
-      uint64_t thesize,
       uint8_t* idxs
     ) {
 
