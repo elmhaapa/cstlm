@@ -1,0 +1,4 @@
+build/data/
+build/results/
+*.txt
+collections/
