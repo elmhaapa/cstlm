@@ -15,6 +15,8 @@
 #include "collection.hpp"
 #include "index_succinct.hpp"
 #include "constants.hpp"
+#include "step.h"
+#include "computeresult.h"
 
 namespace cstlm {
 
@@ -43,38 +45,18 @@ public:
     LMQueryMKN(const index_type* idx, uint64_t ngramsize, bool start_sentence = true);
     void append_symbol(
         const t_pattern& word_vec,
-        std::vector<uint64_t>& start_idx,
-        std::vector<uint64_t>& end_idx,
-        std::vector<node_type>& node_incl_buf,
-        std::vector<node_type>& node_excl_buf,
-        std::vector<size_t>& sizes,
-        std::vector<bool>& oks,
-        std::vector<bool>& breaks,
-        std::vector<bool>& cont,
-        std::vector<uint8_t>& idxs
+        std::vector<Step<node_type>>& steps
     );
 
     void compute(
       const t_pattern& word_vec,
-      std::vector<uint64_t>& start_idx,
-      std::vector<uint64_t>& end_idx,
-      std::vector<node_type>& node_incl_buf,
-      std::vector<node_type>& node_excl_buf,
-      std::vector<size_t>& sizes,
-      std::vector<bool>& oks,
-      std::vector<double>& cs,
-      std::vector<double>& gammas,
-      std::vector<double>& ds,
-      std::vector<uint8_t>& idxs
+      std::vector<Step<node_type>>& steps,
+      std::vector<ComputeResult>& cr
     );
 
     double finale(
-      std::vector<size_t>& sizes,
-      std::vector<bool>& breaks,
-      std::vector<bool>& cont,
-      std::vector<double>& cs,
-      std::vector<double>& gammas,
-      std::vector<double>& ds
+      std::vector<Step<node_type>>& steps,
+      std::vector<ComputeResult>& cr
     );
 
     bool operator==(const LMQueryMKN& other) const;
@@ -125,34 +107,27 @@ LMQueryMKN<t_idx, t_pattern>::LMQueryMKN(const t_idx* idx, uint64_t ngramsize, b
 template <class t_idx, class t_pattern>
 void LMQueryMKN<t_idx, t_pattern>::compute(
       const t_pattern& word_vec,
-      std::vector<uint64_t>& start_idx,
-      std::vector<uint64_t>& end_idx,
-      std::vector<node_type>& node_incl_buf,
-      std::vector<node_type>& node_excl_buf,
-      std::vector<size_t>& sizes,
-      std::vector<bool>& oks,
-      std::vector<double>& cs,
-      std::vector<double>& gammas,
-      std::vector<double>& ds,
-      std::vector<uint8_t>& idxs
+      std::vector<Step<node_type>>& steps,
+      std::vector<ComputeResult>& cr
     ) {
 
   for (uint64_t a = 0; a < node_step; ++a) {
-      auto ks = start_idx[a];
-      auto ke = end_idx[a];
+      Step<node_type> step = steps[a];
+      auto ks = step.start_idx;
+      auto ke = step.end_idx;
       if (ks > word_vec.size()) {
         continue;
       }
       if (ke > word_vec.size()) {
         continue;
       }
-      auto i = idxs[a];
-      auto size = sizes[a];
+      auto i = step.idx;
+      auto size = step.size;
       
-      auto node_incl = node_incl_buf[a];
-      auto node_excl = node_excl_buf[a];
-      auto ok = oks[a];
-      auto start = word_vec[start_idx[a]];
+      auto node_incl = step.node_incl;
+      auto node_excl = step.node_excl;
+      auto ok = step.ok;
+      auto start = word_vec[step.start_idx];
 
       double D1, D2, D3p;
       m_idx->mkn_discount(i, D1, D2, D3p, i == 1 || i != m_ngramsize);
@@ -169,7 +144,7 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       }
       else {
           c = (ok) ? m_idx->m_N1PlusBack(node_incl, start) : 0;
-          d = m_idx->m_N1PlusFrontBack(node_excl, start, word_vec[end_idx[a] - 1], size);
+          d = m_idx->m_N1PlusFrontBack(node_excl, start, word_vec[step.end_idx - 1], size);
       }
 
       if (c == 1) {
@@ -184,7 +159,7 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
 
       uint64_t n1 = 0, n2 = 0, n3p = 0;
       if ((i == m_ngramsize && m_ngramsize != 1) || (start == PAT_START_SYM)) {
-          m_idx->m_N123PlusFront(node_excl, word_vec[end_idx[a] - 1], n1, n2, n3p, size);
+          m_idx->m_N123PlusFront(node_excl, word_vec[step.end_idx - 1], n1, n2, n3p, size);
           // std::cout << "m_N123PlusFront n1: " << n1 << " n2: " << n2 << std::endl;
       }
       else if (i == 1 || m_ngramsize == 1) {
@@ -200,28 +175,24 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       // n3p is dodgy
       double gamma = D1 * n1 + D2 * n2 + D3p * n3p;
       // std::cout << "D1: " << D1 << " n1: " << n1 << " D2: " << D2 << " n2: " << n2 << " D3p: " << D3p << " n3p: " << n3p << std::endl;
-      cs[a] = c;
-      gammas[a] = gamma;
-      ds[a] = d;     
+      cr[a].c = c;
+      cr[a].gamma = gamma;
+      cr[a].d = d;     
     //  std::cout << "c: " << c << " gamma: " << gamma << " d: " << d << std::endl;
   }
 }
 
 template <class t_idx, class t_pattern>
 double LMQueryMKN<t_idx, t_pattern>::finale(
-      std::vector<size_t>& sizes,
-      std::vector<bool>& breaks,
-      std::vector<bool>& cont,
-      std::vector<double>& cs,
-      std::vector<double>& gammas,
-      std::vector<double>& ds
+      std::vector<Step<node_type>>& steps,
+      std::vector<ComputeResult>& cr
     ) {
   double psum = 0.0;
   auto counter = 0;
   // std::cout << "FINALE:" << std::endl;
   for (uint64_t s = 0; s < step; ++s) {
-    auto size = sizes[counter];
-    if (cont[counter]) {
+    auto size = steps[counter].size;
+    if (steps[counter].cont) {
       psum += log10(1);
       counter++;
       continue;
@@ -229,11 +200,11 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
     double p = 1.0 / (m_idx->vocab.size() - 4);
     for (uint64_t i = 1; i <= size; ++i) {
       counter++;
-      if (breaks[counter]) {
+      if (steps[counter].brk) {
         break;
       }
       // std::cout << "c: " << cs[counter] << " gammas: " << gammas[counter] << " d: " << ds[counter] << std::endl;
-      p = (cs[counter] + gammas[counter] * p) / ds[counter];
+      p = (cr[counter].c + cr[counter].gamma * p) / cr[counter].d;
     }
 
     psum += log10(p);
@@ -245,22 +216,15 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
 template <class t_idx, class t_pattern>
 void LMQueryMKN<t_idx, t_pattern>::append_symbol(
     const t_pattern& word_vec,
-    std::vector<uint64_t>& start_idx,
-    std::vector<uint64_t>& end_idx,
-    std::vector<node_type>& node_incl_buf,
-    std::vector<node_type>& node_excl_buf,
-    std::vector<size_t>& sizes,
-    std::vector<bool>& oks,
-    std::vector<bool>& breaks,
-    std::vector<bool>& cont,
-    std::vector<uint8_t>& idxs
-    )
+    std::vector<Step<node_type>>& steps
+  )
 {
   for (auto symbol : word_vec) {
     if (symbol == PAT_START_SYM && m_pattern.size() == 1 && m_pattern.front() == PAT_START_SYM) {
-        cont[node_step] = true;
+        steps[node_step].cont = true;
         step++;
         node_step++;
+        steps[node_step].node_step = node_step;
         continue;
     }
 
@@ -285,15 +249,16 @@ void LMQueryMKN<t_idx, t_pattern>::append_symbol(
     bool ok = !unk;
     std::vector<node_type> node_incl_vec({ node_incl });
 
-    sizes[node_step] = size;
+    steps[node_step].size = size;
 
     for (unsigned i = 1; i <= size; ++i) {
         node_step++;
-        idxs[node_step] = i;
+        steps[node_step].node_step = node_step;
+        steps[node_step].idx = i;
         auto start = pattern_end - i;
 
         if (i > 1 && *start == UNKNOWN_SYM) {
-          breaks[node_step] = true;
+          steps[node_step].brk = true;
           break;
         }
         if (ok) {
@@ -307,7 +272,7 @@ void LMQueryMKN<t_idx, t_pattern>::append_symbol(
         if (i >= 2) {
             node_excl_it++;
             if (node_excl_it == m_last_nodes_incl.end()) {
-                breaks[node_step] = true;
+                steps[node_step].brk = true;
                 break;
             }
             else {
@@ -315,14 +280,14 @@ void LMQueryMKN<t_idx, t_pattern>::append_symbol(
             }
         }
 
-        node_incl_buf[node_step] = node_incl;
-        node_excl_buf[node_step] = node_excl;
+        steps[node_step].node_incl = node_incl;
+        steps[node_step].node_excl = node_excl;
         //size_t n_size = sizes[node_step];
-        sizes[node_step] = std::distance(start, pattern_end - 1);
-        start_idx[node_step] = m_pattern_end - i;
-        end_idx[node_step] = m_pattern_end - 1;
+        steps[node_step].size = std::distance(start, pattern_end - 1);
+        steps[node_step].start_idx = m_pattern_end - i;
+        steps[node_step].end_idx = m_pattern_end - 1;
         // std::cout << "pattern_end: " << *(pattern_end -1) << " end_idx[node_step]: " << word_vec[m_pattern_end - 1] << std::endl;
-        oks[node_step] = ok;
+        steps[node_step].ok = ok;
 
         /*
         double D1, D2, D3p;
@@ -388,6 +353,7 @@ void LMQueryMKN<t_idx, t_pattern>::append_symbol(
 
     step++;
     node_step++;
+    steps[node_step].node_step = node_step;
   }
 }
 

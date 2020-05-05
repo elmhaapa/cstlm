@@ -1,9 +1,9 @@
 #!/bin/bash
 
-COLLECTION="europarl"
-FILE="data/europarl-tail-10000-fi-en.en"
-# COLLECTION="toy"
-# FILE="testi.txt"
+# COLLECTION="europarl"
+# FILE="data/europarl-tail-10000-fi-en.en"
+COLLECTION="toysmall"
+FILE="testi.txt"
 
 for i in {1..10}; do
   echo "Running query against collection $COLLECTION with file: $FILE"

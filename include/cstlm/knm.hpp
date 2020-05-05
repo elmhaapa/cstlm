@@ -17,6 +17,8 @@
 #include "constants.hpp"
 #include "query.hpp"
 #include "query_kn.hpp"
+#include "step.h"
+#include "computeresult.h"
 
 namespace cstlm {
  
@@ -117,6 +119,21 @@ void quicksort(
     } 
 }
 
+/*
+template <class t_node>
+struct Step {
+  t_node node_incl;
+  t_node node_excl;
+  uint64_t start_idx;
+  uint64_t end_idx;
+  size_t sizes;
+  bool ok;
+  bool brk;
+  bool cont;
+  uint8_t idx;
+};
+*/
+
 template <class t_idx, class t_pattern>
 double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
     uint64_t& , uint64_t ngramsize,
@@ -131,50 +148,20 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         // uint64_t size = std::pow(word_vec.size(), 2);
         uint64_t size = word_vec.size() * ngramsize * 2;
         // std::cout << "size: " << size << std::endl;
-        
-        std::vector<node_type> node_incl_buf;
-        node_incl_buf.resize(size);
 
-        std::vector<node_type> node_excl_buf;
-        node_excl_buf.resize(size);
-
-        std::vector<uint64_t> start_idx;
-        start_idx.resize(size);
-
-        std::vector<uint64_t> end_idx;
-        end_idx.resize(size);
-
-        std::vector<size_t> sizes;
-        sizes.resize(size);
-
-        std::vector<bool> oks;
-        oks.resize(size);
-
-        std::vector<bool> breaks;
-        breaks.resize(size);
-
-        std::vector<bool> cont;
-        cont.resize(size);
-
-        std::vector<uint8_t> idxs;
-        idxs.resize(size);
-
+        std::vector<Step<node_type>> steps;
+        steps.resize(size);
 
         LMQueryMKN<t_idx, t_pattern> query(&idx, ngramsize);
         // auto append_start = clock::now();
         
         // std::cout << "enter append symbol" << std::endl;
-        query.append_symbol(word_vec, start_idx, end_idx, node_incl_buf, node_excl_buf, sizes, oks, breaks, cont, idxs);
-
+        query.append_symbol(word_vec, steps);
+        steps.resize(query.node_step);
         // std::cout << "query.node_step: " << query.node_step << std::endl;
         // auto append_end = clock::now();
 
         // auto reverse_creation_start = clock::now();
-        std::vector<uint32_t> reverse;
-        reverse.resize(size);
-        for (uint64_t i = 0; i < size; ++i) {
-          reverse[i] = i;
-        }
         // auto reverse_creation_end = clock::now();
 /*
         node_type node_incl_buf_sorted[size];
@@ -206,7 +193,6 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         std::copy(cont, cont  + query.node_step, cont_sorted);
   */
         // auto creating_sizes_sorted_start = clock::now();
-        std::vector<size_t> sizes_sorted(sizes.begin(), sizes.begin() + query.node_step);
         //std::copy(sizes, sizes  + query.node_step, sizes_sorted);
         // auto creating_sizes_sorted_end = clock::now();
 
@@ -252,23 +238,34 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
 
         // std::cout << "passed sorting" << std::endl;
 
-        std::vector<double> cs;
-        cs.resize(size);
-        std::vector<double> gammas;
-        gammas.resize(size);
-        std::vector<double> ds;
-        ds.resize(size);
+        std::vector<ComputeResult> cr;
+        cr.resize(query.node_step);
+
+        
+        std::sort(steps.begin(), steps.end(),
+          [&](Step<node_type> a, Step<node_type> b){ return idx.cst.id(a.node_incl) < idx.cst.id(b.node_incl); });
+
+
 
         // std::cout << "passed cs, gammas, ds" << std::endl;
 
         // auto compute_start = clock::now();
-        query.compute(word_vec, start_idx, end_idx, node_incl_buf, node_excl_buf, sizes_sorted, oks, cs, gammas, ds, idxs);
+        query.compute(word_vec, steps, cr);
         // auto compute_end = clock::now();
 
         // auto reverse_start = clock::now();
         
         // std::cout << "passed compute" << std::endl;
 
+        std::vector<Step<node_type>> nsteps;
+        nsteps.resize(query.node_step);
+        std::vector<ComputeResult> ncr;
+        ncr.resize(query.node_step);
+        for (uint64_t i = 0; i < query.node_step; ++i) {
+          nsteps[steps[i].node_step] = steps[i];
+          ncr[steps[i].node_step] = cr[i];
+        }
+/*
         std::vector<double> finalcs;
         finalcs.resize(query.node_step);
         std::vector<double> finalgammas;
@@ -283,12 +280,13 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
           finalds[reverse[i]] = ds[i];
           //finalsizes[reverse[i]] = sizes_sorted[i];
         }
+        */
         // auto reverse_end = clock::now();
 
         // std::cout << "passed reverse" << std::endl;
 
         // auto finale_start = clock::now();
-        double finalScore = query.finale(sizes, breaks, cont, finalcs, finalgammas, finalds);
+        double finalScore = query.finale(nsteps, ncr);
         // auto finale_end = clock::now();
 
         // std::cout << "MY RESULT: " << finalScore << std::endl;
