@@ -177,7 +177,7 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       // std::cout << "D1: " << D1 << " n1: " << n1 << " D2: " << D2 << " n2: " << n2 << " D3p: " << D3p << " n3p: " << n3p << std::endl;
       cr[a].c = c;
       cr[a].gamma = gamma;
-      cr[a].d = d;     
+      cr[a].d = d;
     //  std::cout << "c: " << c << " gamma: " << gamma << " d: " << d << std::endl;
   }
 }
