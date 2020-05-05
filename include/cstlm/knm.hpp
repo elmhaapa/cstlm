@@ -119,20 +119,15 @@ void quicksort(
 
 template <class t_idx, class t_pattern>
 double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
-    uint64_t& M, uint64_t ngramsize,
+    uint64_t& , uint64_t ngramsize,
     bool ismkn)
 {
     // std::cout << "SLKN word_vec size: " << word_vec.size() << std::endl;
     // using clock = std::chrono::high_resolution_clock;
 
     using node_type = typename t_idx::cst_type::node_type;
-    using value_type = typename t_idx::value_type;
-    typedef std::vector<value_type> pattern_type;
-    typedef typename pattern_type::const_iterator pattern_iterator;
-
 
     if (ismkn) {
-        double final_score = 0;
         // uint64_t size = std::pow(word_vec.size(), 2);
         uint64_t size = word_vec.size() * ngramsize * 2;
         // std::cout << "size: " << size << std::endl;
@@ -177,7 +172,7 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         // auto reverse_creation_start = clock::now();
         std::vector<uint32_t> reverse;
         reverse.resize(size);
-        for (auto i = 0; i < size; ++i) {
+        for (uint64_t i = 0; i < size; ++i) {
           reverse[i] = i;
         }
         // auto reverse_creation_end = clock::now();
@@ -232,6 +227,8 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
             query.node_step -1
           );
           */
+
+        /*
         std::stable_sort(reverse.begin(), reverse.begin() + query.node_step,
             [&node_incl_buf, &idx](size_t i1, size_t i2) {return idx.precomputed.m_bv_rank(idx.cst.id(node_incl_buf[i1])) < idx.precomputed.m_bv_rank(idx.cst.id(node_incl_buf[i1]));});
  
@@ -249,6 +246,7 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
 
         std::stable_sort(idxs.begin(), idxs.begin() + query.node_step,
             [&node_incl_buf, &idx](size_t i1, size_t i2) {return idx.precomputed.m_bv_rank(idx.cst.id(node_incl_buf[i1])) < idx.precomputed.m_bv_rank(idx.cst.id(node_incl_buf[i1]));});
+        */
 
         // auto sort_end = clock::now();
 
@@ -279,7 +277,7 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         finalds.resize(query.node_step);
 
         //size_t finalsizes[size];
-        for (auto i = 0; i < query.node_step; ++i) {
+        for (uint64_t i = 0; i < query.node_step; ++i) {
           finalcs[reverse[i]] = cs[i];
           finalgammas[reverse[i]] = gammas[i];
           finalds[reverse[i]] = ds[i];

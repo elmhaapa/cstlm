@@ -376,8 +376,7 @@ public:
         return N1plus_front;
     }
     // computes N1(abc *), N_2(abc *), N_3+(abc *) needed for the lower level of
-    void m_N123PlusFrontPrime(const node_type& node, uint64_t pattern_begin,
-        uint64_t pattern_end, uint64_t& f1prime,
+    void m_N123PlusFrontPrime(const node_type& node, uint64_t pattern_begin, uint64_t& f1prime,
         uint64_t& f2prime, uint64_t& f3pprime, uint64_t pattern_size) const
     {
         auto timer = lm_bench::bench(timer_type::N123PlusFrontPrime);
@@ -481,7 +480,7 @@ public:
 
     // Computes N_1( abc * ), N_2( abc * ), N_3+( abc * ); needed for modified
     // Kneser-Ney smoothing
-    void m_N123PlusFront(const node_type& node, uint64_t pattern_begin,
+    void m_N123PlusFront(const node_type& node,
         uint64_t pattern_end, uint64_t& n1, uint64_t& n2,
         uint64_t& n3p, uint64_t pattern_size) const
     {

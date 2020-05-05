@@ -137,7 +137,7 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       std::vector<uint8_t>& idxs
     ) {
 
-  for (auto a = 0; a < node_step; ++a) {
+  for (uint64_t a = 0; a < node_step; ++a) {
       auto ks = start_idx[a];
       auto ke = end_idx[a];
       if (ks > word_vec.size()) {
@@ -149,12 +149,10 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       auto i = idxs[a];
       auto size = sizes[a];
       
-      double p = 1.0;
       auto node_incl = node_incl_buf[a];
       auto node_excl = node_excl_buf[a];
       auto ok = oks[a];
       auto start = word_vec[start_idx[a]];
-      auto pattern_end = word_vec[end_idx[a]];
 
       double D1, D2, D3p;
       m_idx->mkn_discount(i, D1, D2, D3p, i == 1 || i != m_ngramsize);
@@ -186,7 +184,7 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
 
       uint64_t n1 = 0, n2 = 0, n3p = 0;
       if ((i == m_ngramsize && m_ngramsize != 1) || (start == PAT_START_SYM)) {
-          m_idx->m_N123PlusFront(node_excl, start, word_vec[end_idx[a] - 1], n1, n2, n3p, size);
+          m_idx->m_N123PlusFront(node_excl, word_vec[end_idx[a] - 1], n1, n2, n3p, size);
           // std::cout << "m_N123PlusFront n1: " << n1 << " n2: " << n2 << std::endl;
       }
       else if (i == 1 || m_ngramsize == 1) {
@@ -195,7 +193,7 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
           n3p = (m_idx->vocab_size() - 2) - (n1 + n2);
       }
       else {
-          m_idx->m_N123PlusFrontPrime(node_excl, start, pattern_end, n1, n2, n3p, size);
+          m_idx->m_N123PlusFrontPrime(node_excl, start, n1, n2, n3p, size);
           // std::cout << "m_N123PlusFrontPrime n1: " << n1 << " n2: " << n2 << std::endl;
       }
 
@@ -221,7 +219,7 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
   double psum = 0.0;
   auto counter = 0;
   // std::cout << "FINALE:" << std::endl;
-  for (auto s = 0; s < step; ++s) {
+  for (uint64_t s = 0; s < step; ++s) {
     auto size = sizes[counter];
     if (cont[counter]) {
       psum += log10(1);
@@ -229,7 +227,7 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
       continue;
     }
     double p = 1.0 / (m_idx->vocab.size() - 4);
-    for (auto i = 1; i <= size; ++i) {
+    for (uint64_t i = 1; i <= size; ++i) {
       counter++;
       if (breaks[counter]) {
         break;
