@@ -1,5 +1,0 @@
-*.x
-C*
-cmake_*
-Makefile
-external

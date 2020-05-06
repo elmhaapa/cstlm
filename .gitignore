@@ -1,0 +1,9 @@
+*.x
+C*
+cmake_*
+Makefile
+external
+*.txt
+collections/
+data/
+build/results/
