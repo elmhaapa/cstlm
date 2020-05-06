@@ -49,8 +49,6 @@ include_directories(${CMAKE_HOME_DIRECTORY}/include/cstlm/
                     ${CMAKE_BINARY_DIR}/external/sdsl-lite/external/libdivsufsort/include/
                     )
 
-find_package(GTest REQUIRED)
-
 add_executable(build-index.x src/build-index.cpp)
 target_link_libraries(build-index.x sdsl pthread divsufsort divsufsort64)
 
