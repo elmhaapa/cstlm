@@ -26,7 +26,6 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
     bool ismkn)
 {
     if (ismkn) {
-        std::cout << "ISMKN true" << std::endl;
         double final_score = 0;
         LMQueryMKN<t_idx> query(&idx, ngramsize);
         for (const auto& word : word_vec) {
