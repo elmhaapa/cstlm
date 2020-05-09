@@ -55,16 +55,18 @@ double sentence_logprob_kneser_ney(const t_idx& idx, const t_pattern& word_vec,
         query.compute(word_vec, steps, cr);
         // auto compute_end = clock::now();
         
+        /*
         std::vector<Step<node_type>> nsteps;
         nsteps.resize(query.node_step);
+        */
         std::vector<ComputeResult> ncr;
         ncr.resize(query.node_step);
         for (uint64_t i = 0; i < query.node_step; ++i) {
-          nsteps[steps[i].node_step] = steps[i];
+          // nsteps[steps[i].node_step] = steps[i];
           ncr[steps[i].node_step] = cr[i];
         }
         
-        double finalScore = query.finale(nsteps, ncr);
+        double finalScore = query.finale(ncr);
 
 
         /*

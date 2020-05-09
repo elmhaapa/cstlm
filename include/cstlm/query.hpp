@@ -55,7 +55,6 @@ public:
     );
 
     double finale(
-      std::vector<Step<node_type>>& steps,
       std::vector<ComputeResult>& cr
     );
 
@@ -178,21 +177,23 @@ void LMQueryMKN<t_idx, t_pattern>::compute(
       cr[a].c = c;
       cr[a].gamma = gamma;
       cr[a].d = d;
+      cr[a].cont = steps[a].cont;
+      cr[a].brk = steps[a].brk;
+      cr[a].size = steps[a].size;
     //  std::cout << "c: " << c << " gamma: " << gamma << " d: " << d << std::endl;
   }
 }
 
 template <class t_idx, class t_pattern>
 double LMQueryMKN<t_idx, t_pattern>::finale(
-      std::vector<Step<node_type>>& steps,
       std::vector<ComputeResult>& cr
     ) {
   double psum = 0.0;
   auto counter = 0;
   // std::cout << "FINALE:" << std::endl;
   for (uint64_t s = 0; s < step; ++s) {
-    auto size = steps[counter].size;
-    if (steps[counter].cont) {
+    auto size = cr[counter].size;
+    if (cr[counter].cont) {
       psum += log10(1);
       counter++;
       continue;
@@ -200,7 +201,7 @@ double LMQueryMKN<t_idx, t_pattern>::finale(
     double p = 1.0 / (m_idx->vocab.size() - 4);
     for (uint64_t i = 1; i <= size; ++i) {
       counter++;
-      if (steps[counter].brk) {
+      if (cr[counter].brk) {
         break;
       }
       // std::cout << "c: " << cs[counter] << " gammas: " << gammas[counter] << " d: " << ds[counter] << std::endl;
