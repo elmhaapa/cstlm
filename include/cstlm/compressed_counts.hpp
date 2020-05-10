@@ -30,7 +30,7 @@ private:
     vector_type m_counts_f1;
     vector_type m_counts_f2;
     bool m_is_mkn;
-    uint32_t* bwt;
+    uint64_t* bwt;
     const uint64_t interval = 1024;
 
 public:
@@ -275,7 +275,6 @@ public:
     void initialise_kneser_ney(collection& col, t_cst& cst,
         uint64_t max_node_depth)
     {
-        std::cout << "INIT KNESER NEY!" << std::endl;
         sdsl::bit_vector tmp_bv(cst.nodes());
         sdsl::util::set_to_value(tmp_bv, 0);
         auto tmp_buffer_counts_fb = sdsl::int_vector_buffer<32>(col.temp_file("counts_fb"), std::ios::out);

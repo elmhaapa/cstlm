@@ -42,7 +42,7 @@ struct precomputed_stats {
     precomputed_stats() = default;
 
     template <class t_cst>
-    precomputed_stats(collection& col, t_cst& cst, uint64_t max_ngram_len, uint32_t* bwt)
+    precomputed_stats(collection& col, t_cst& cst, uint64_t max_ngram_len, uint64_t* bwt)
         : max_ngram_count(max_ngram_len)
         , N1plus_dotdot(0)
         , N3plus_dot(0)
@@ -213,7 +213,7 @@ struct precomputed_stats {
 
 private:
     template <typename t_cst>
-    void ncomputer(collection& col, const t_cst& cst, uint32_t* bwt);
+    void ncomputer(collection& col, const t_cst& cst, uint64_t* bwt);
 
     template <class t_cst>
     typename t_cst::size_type
@@ -238,7 +238,7 @@ void my_interval_symbols(
     uint64_t i,
     uint64_t j,
     uint64_t& num_syms,
-    uint32_t* bwt)
+    uint64_t* bwt)
 {
   uint64_t l = j - i;
   if (l == 1) {
@@ -263,7 +263,7 @@ void my_interval_symbols(
 
 // optimised version
 template <class t_cst>
-void precomputed_stats::ncomputer(collection& col, const t_cst& cst, uint32_t* bwt)
+void precomputed_stats::ncomputer(collection& col, const t_cst& cst, uint64_t* bwt)
 {
     // load up text and store in a bitvector for locating sentinel
     // symbols

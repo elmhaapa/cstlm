@@ -81,8 +81,8 @@ public:
         else {
             sdsl::load_from_file(m_cst, cst_file);
         }
-        uint32_t* bwt = new uint32_t[m_cst.csa.bwt.size()];
-        for (uint32_t i = 0; i < m_cst.csa.bwt.size(); ++i) {
+        uint64_t* bwt = new uint64_t[m_cst.csa.bwt.size()];
+        for (uint64_t i = 0; i < m_cst.csa.bwt.size(); ++i) {
           bwt[i] = m_cst.csa.bwt[i];
         }
         auto discounts_file = col.path + "/tmp/DISCOUNTS-MAXN=" + std::to_string(t_max_ngram_count) + "-BYTE="
