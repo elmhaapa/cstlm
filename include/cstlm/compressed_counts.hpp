@@ -82,7 +82,7 @@ public:
 
     template <class t_cst>
     compressed_counts(collection& col, t_cst& cst, uint64_t max_node_depth,
-        bool mkn_counts, uint32_t* b)
+        bool mkn_counts, uint64_t* b)
     {
         bwt = b;
         m_is_mkn = mkn_counts;
