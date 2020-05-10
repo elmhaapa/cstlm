@@ -250,7 +250,7 @@ void my_interval_symbols(
       num_syms = 2;
     }
   } else {
-    std::unordered_set<uint32_t> symbols;
+    std::unordered_set<uint64_t> symbols;
     for (uint64_t x = i; x < j; ++x) {
       uint64_t val = bwt[x];
       if (symbols.find(val) == symbols.end()) {
