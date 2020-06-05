@@ -1,33 +1,17 @@
 Welcome to CSTLM
 ================
 
-This is a compressed suffix tree based infinite context size language model capable of indexing terabyte sized text collections.
+This is a fork of the [CSTLM by Shareghi et al](https://github.com/eehsan/cstlm), which I used as a part of my M.Sc. thesis. If you want to use this code, please refer to the work of the original authors.
 
-## Disclaimer
-
-The new multi-threaded extension which does parallel construction (was not used in the published results listed in below) is not tested rigorously. For stability and correctness, please checkout the older single-thread version:
-
-git checkout 8163b55fe9a9dfad1d1dbcc89a09d451c5fe217b
-
-## References
-
-This code is the basis of the following papers:
-
-- Ehsan Shareghi, Matthias Petri, Gholamreza Haffari, Trevor Cohn: Compact, Efficient and Unlimited Capacity: Language Modeling with Compressed Suffix Trees. EMNLP 2015: 2409-2418
-
-- Ehsan Shareghi, Matthias Petri, Gholamreza Haffari, Trevor Cohn: Fast, Small and Exact: Infinite-order Language Modelling with Compressed Suffix Trees. TACL 2016 : 477-490
-
-- Ehsan Shareghi, Trevor Cohn, Gholamreza Haffari: Richer Interpolative Smoothing Based on Modified Kneser-Ney Language Modeling. EMNLP 2016: 944-948
-
-Please cite our EMNLP2015 and TACL2016 papers, if you use our code. 
 
 ## Compile instructions
 
-1. Check out the reprository: `https://github.com/eehsan/cstlm.git`
-2. `git submodule update --init`
-3. `cd build`
-4. `cmake ..`
-5. `make -j`
+1. Check out the reprository: `https://github.com/elmhaapa/cstlm.git`
+3. `git checkout dev-branch`
+4. `git submodule update --init`
+5. `cd build`
+6. `cmake ..`
+7. `make -j`
 
 ## Run unit tests to ensure correctness
 
@@ -72,9 +56,13 @@ Build index (including quantities for modified KN)
 ./build-index.x -c ../collections/toy/ -m
 ```
 
-## Generalized Modified Kneser-Ney
+## Experiments
 
-- Check out the MMKN branch of the repository: `https://github.com/eehsan/cstlm/tree/MMKN`
+Different branches contain different experiments:
 
-## Moses integration and parallel construction
-Checkout what Matthias has developed on [his repository](https://github.com/mpetri/cstlm).
+- **dev-branch** has a functioning version of the previous work by Shareghi et al.
+- **hac-vector** uses hacs instead of dacs.
+- **buffering-vector-struct** contains the buffering approach.
+- **bwt-iter** has the iterating bwt approach. 
+
+
